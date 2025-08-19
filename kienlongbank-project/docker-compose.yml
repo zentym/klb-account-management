@@ -1,0 +1,226 @@
+# version: '3.8'
+services:
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: klb-postgres
+    ports:
+      - "5432:5432" # Mở cổng 5432 của máy ra cổng 5432 của container
+    environment:
+      - POSTGRES_USER=kienlong
+      - POSTGRES_PASSWORD=notStrongPassword
+      - POSTGRES_DB=account_management
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  postgres-customer-db:
+    image: postgres:15-alpine
+    container_name: klb-postgres-customer
+    ports:
+      - "5433:5432" # Mở cổng 5433 của máy ra cổng 5432 của container (tránh conflict)
+    environment:
+      - POSTGRES_USER=kienlong
+      - POSTGRES_PASSWORD=notStrongPassword
+      - POSTGRES_DB=customer_service_db
+    volumes:
+      - postgres_customer_data:/var/lib/postgresql/data
+
+  api-gateway:
+    build: ./api-gateway
+    container_name: klb-api-gateway
+    ports:
+      - "8080:8080" # Chỉ mở cổng này ra bên ngoài
+    depends_on:
+      customer-service:
+        condition: service_started
+      account-management:
+        condition: service_started
+      loan-service:
+        condition: service_started
+      keycloak:
+        condition: service_started
+      zookeeper:
+        condition: service_healthy
+    environment:
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI=http://klb-keycloak:8080/realms/Kienlongbank/protocol/openid-connect/certs
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  customer-service:
+    build:
+      context: .
+      dockerfile: ./customer-service/Dockerfile
+    container_name: klb-customer-service
+    # ports: # Đóng cổng - chỉ truy cập thông qua api-gateway
+    #   - "8082:8082"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-customer-db:5432/customer_service_db
+      - SPRING_DATASOURCE_USERNAME=kienlong
+      - SPRING_DATASOURCE_PASSWORD=notStrongPassword
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI=http://klb-keycloak:8080/realms/Kienlongbank/protocol/openid-connect/certs
+    extra_hosts:
+      - "localhost:host-gateway"
+    depends_on:
+      postgres-customer-db:
+        condition: service_started
+      keycloak:
+        condition: service_started
+      zookeeper:
+        condition: service_healthy
+
+  account-management:
+    build:
+      context: .
+      dockerfile: ./main-app/Dockerfile
+    container_name: klb-account-management
+    # ports: # Đóng cổng - chỉ truy cập thông qua api-gateway
+    #   - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/account_management
+      - SPRING_DATASOURCE_USERNAME=kienlong
+      - SPRING_DATASOURCE_PASSWORD=notStrongPassword
+      - CUSTOMER_SERVICE_URL=http://customer-service:8082
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI=http://klb-keycloak:8080/realms/Kienlongbank/protocol/openid-connect/certs
+      - SPRING_RABBITMQ_HOST=rabbitmq
+    extra_hosts:
+      - "localhost:host-gateway"
+    depends_on:
+      postgres-db:
+        condition: service_started
+      customer-service:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
+      zookeeper:
+        condition: service_healthy
+
+  loan-db:
+    image: postgres:15-alpine
+    container_name: klb-loan-db
+    ports:
+      - "5435:5432" # Dùng cổng 5435 để tránh xung đột
+    environment:
+      - POSTGRES_USER=kienlong_loan
+      - POSTGRES_PASSWORD=yourStrongPassword
+      - POSTGRES_DB=loan_service_db
+    volumes:
+      - loan_data:/var/lib/postgresql/data
+
+  loan-service:
+    build:
+      context: .
+      dockerfile: ./loan-service/Dockerfile.optimized
+    container_name: klb-loan-service
+    # ports: # Đóng cổng - chỉ truy cập thông qua api-gateway
+    #   - "8083:8083" # Chạy service ở cổng 8083
+    depends_on:
+      loan-db:
+        condition: service_started
+      keycloak:
+        condition: service_started
+      zookeeper:
+        condition: service_healthy
+    environment:
+      - SERVER_PORT=8083
+      - DB_URL=jdbc:postgresql://loan-db:5432/loan_service_db
+      - DB_USERNAME=kienlong_loan
+      - DB_PASSWORD=yourStrongPassword
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI=http://klb-keycloak:8080/realms/Kienlongbank/protocol/openid-connect/certs
+    extra_hosts:
+      - "localhost:host-gateway"
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: klb-rabbitmq
+    ports:
+      - "5672:5672" # Cổng giao tiếp cho các ứng dụng
+      - "15672:15672" # Cổng cho giao diện quản lý web
+
+  notification-service:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    container_name: klb-notification-service
+    # ports: # Đóng cổng - chỉ truy cập thông qua api-gateway
+    #   - "8084:8084"
+    environment:
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_RABBITMQ_PORT=5672
+      - SPRING_RABBITMQ_USERNAME=guest
+      - SPRING_RABBITMQ_PASSWORD=guest
+    depends_on:
+      - rabbitmq
+
+  wiremock:
+    image: wiremock/wiremock:latest
+    container_name: klb-wiremock
+    ports:
+      - "8081:8080" # Mở cổng 8081 của máy ra cổng 8080 của WireMock
+    volumes:
+      - ./wiremock/mappings:/home/wiremock/mappings
+    command: [ "--verbose", "--global-response-templating" ]
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: klb-keycloak
+    command: start-dev
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+      - KC_HOSTNAME_URL=http://localhost:8090 # Đặt hostname để Keycloak có thể truy cập từ bên ngoài
+    ports:
+      - "8090:8080"
+    networks:
+      default:
+        aliases:
+          - localhost
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: klb-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus:/etc/prometheus
+    command: --config.file=/etc/prometheus/prometheus.yml
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: klb-grafana
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: klb-jaeger
+    ports:
+      - "16686:16686" # Cổng giao diện người dùng của Jaeger
+      - "4317:4317" # Cổng nhận dữ liệu OTLP qua gRPC
+      - "4318:4318" # Cổng nhận dữ liệu OTLP qua HTTP
+  zookeeper:
+    image: zookeeper:latest
+    container_name: klb-zookeeper
+    ports:
+      - "2181:2181"
+    # Thêm healthcheck để kiểm tra khi nào Zookeeper sẵn sàng
+    healthcheck:
+      test: [ "CMD", "sh", "-c", "echo 'ruok' | nc -w 2 localhost 2181" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  redis:
+    image: redis:alpine
+    container_name: klb-redis
+    ports:
+      - "6379:6379"
+  vault:
+    image: hashicorp/vault:latest
+    container_name: klb-vault
+    ports:
+      - "8200:8200"
+    environment:
+      # Token root để truy cập Vault trong môi trường dev. KHÔNG DÙNG cho production.
+      VAULT_DEV_ROOT_TOKEN_ID: "my-root-token"
+    cap_add:
+      - IPC_LOCK
+volumes:
+  postgres_data:
+  postgres_customer_data:
+  loan_data:

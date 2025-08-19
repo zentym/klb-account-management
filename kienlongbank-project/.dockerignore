@@ -1,0 +1,36 @@
+# Exclude unnecessary files from Docker build context
+**/.git
+**/.gitignore
+**/README.md
+**/HELP.md
+**/.mvn
+**/mvnw
+**/mvnw.cmd
+**/target
+**/.idea
+**/.vscode
+**/.settings
+**/.project
+**/.classpath
+**/node_modules
+**/.DS_Store
+**/Thumbs.db
+
+# Exclude test resources
+**/src/test
+**/*test*
+**/tests
+
+# Exclude documentation
+**/docs
+**/*.md
+
+# Exclude IDE files  
+**/*.iml
+**/*.ipr
+**/*.iws
+
+# Exclude temporary files
+**/tmp
+**/temp
+**/.tmp

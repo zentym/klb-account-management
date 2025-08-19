@@ -1,0 +1,13 @@
+{
+    "name": "klb-backend-mock",
+    "version": "1.0.0",
+    "description": "Mock backend server for KLB Account Management",
+    "main": "mock-server.js",
+    "scripts": {
+        "start": "node mock-server.js"
+    },
+    "dependencies": {
+        "express": "^4.18.2",
+        "cors": "^2.8.5"
+    }
+}

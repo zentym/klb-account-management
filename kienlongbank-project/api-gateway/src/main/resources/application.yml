@@ -1,0 +1,57 @@
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: customer-service-route
+              uri: http://customer-service:8082
+              predicates:
+                - Path=/api/customers/**
+            - id: account-service-route
+              uri: http://account-management:8080
+              predicates:
+                - Path=/api/accounts/**
+            - id: transaction-service-route
+              uri: http://account-management:8080
+              predicates:
+                - Path=/api/transactions/**
+            - id: loan-service-route
+              uri: http://loan-service:8083
+              predicates:
+                - Path=/api/loans/**
+            - id: notification-service-route
+              uri: http://notification-service:8084
+              predicates:
+                - Path=/api/notifications/**
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # issuer-uri: http://localhost:8090/realms/Kienlongbank
+          issuer-uri: http://keycloak:8080/realms/Kienlongbank
+          # Alternative configuration using JWKS URI directly (more reliable)
+          # jwk-set-uri: http://klb-keycloak:8080/realms/Kienlongbank/protocol/openid-connect/certs
+
+server:
+  port: 8080
+
+# Dubbo Registry Configuration
+dubbo:
+  registry:
+    address: zookeeper://zookeeper:2181
+    check: false
+  consumer:
+    check: false
+
+# Logging configuration
+logging:
+  level:
+    # Bật INFO log cho đúng class GlobalFilter của bạn
+    com.kienlongbank.api_gateway.config.RequestLoggingFilterConfig: INFO
+    
+    # Giữ lại các log security để gỡ lỗi
+    org.springframework.security: DEBUG
+    org.springframework.security.oauth2.server.resource: DEBUG

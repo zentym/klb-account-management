@@ -1,0 +1,125 @@
+# Customer Service Configuration
+spring:
+  application:
+    name: customer-service
+  
+  # Disable compatibility checker
+  cloud:
+    compatibility-verifier:
+      enabled: false
+    vault:
+      enabled: true
+      uri: http://vault:8200
+      token: my-root-token
+      kv:
+        enabled: true
+        backend: secret
+
+  # PostgreSQL Database Connection
+  datasource:
+    url: jdbc:postgresql://postgres-customer-db:5432/customer_service_db
+    username: ${db_username:postgres}
+    password: ${db_password:password}
+
+  # JPA/Hibernate Configuration
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  # Security OAuth2 Resource Server Configuration
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://keycloak:8080/realms/Kienlongbank
+          jwk-set-uri: http://keycloak:8080/realms/Kienlongbank/protocol/openid-connect/certs
+    method:
+      pre-post-enabled: true
+
+  # Redis Configuration
+  data:
+    redis:
+      host: redis
+      port: 6379
+  cache:
+    type: redis
+    redis:
+      time-to-live: 10m
+
+  # RabbitMQ Configuration
+  rabbitmq:
+    host: rabbitmq
+    port: 5672
+    username: guest
+    password: guest
+
+# Server Configuration
+server:
+  port: 8082
+
+# SpringDoc OpenAPI 3 Configuration
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+    try-it-out-enabled: true
+
+# Logging Configuration
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.springframework.security.oauth2: DEBUG
+    org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG
+    com.example.customer_service: INFO
+    root: INFO
+
+# Management/Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
+  metrics:
+    info:
+      env:
+        enabled: true
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: http://jaeger:4318/v1/traces
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
+# Dubbo Configuration
+dubbo:
+  registry:
+    address: zookeeper://zookeeper:2181
+    check: false
+  consumer:
+    check: false
+  config-center:
+    check: false
+  application:
+    name: klb-customer-service
+  protocol:
+    name: dubbo
+    port: 20881

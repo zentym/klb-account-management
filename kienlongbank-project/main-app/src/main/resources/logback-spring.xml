@@ -1,0 +1,86 @@
+<configuration>
+
+    <!-- Định nghĩa appender để ghi log vào console -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>
+                %d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg %n
+                MDC:[traceId=%X{traceId:-}, spanId=%X{spanId:-}]%n
+            </pattern>        </encoder>
+    </appender>
+
+    <!-- Định nghĩa appender để ghi log vào file chung -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/application.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/application.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+            <createParents>true</createParents>  <!-- Thêm dòng này để tạo thư mục cha nếu chưa tồn tại -->
+        </rollingPolicy>
+        <encoder>
+            <pattern>
+                %d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg %n
+                MDC:[traceId=%X{traceId:-}, spanId=%X{spanId:-}]%n
+            </pattern>        </encoder>
+    </appender>
+
+    <!-- Định nghĩa appender để ghi log của Hibernate -->
+    <appender name="HIBERNATE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/hibernate.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/hibernate.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+            <createParents>true</createParents>
+        </rollingPolicy>
+        <encoder>
+            <pattern>
+                %d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg %n
+                MDC:[traceId=%X{traceId:-}, spanId=%X{spanId:-}]%n
+            </pattern>
+            </encoder>
+    </appender>
+
+    <!-- Định nghĩa appender để ghi log của Spring Security -->
+    <appender name="SECURITY" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/security.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/security.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+            <createParents>true</createParents>
+        </rollingPolicy>
+        <encoder>
+             <pattern>
+                %d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg %n
+                MDC:[traceId=%X{traceId:-}, spanId=%X{spanId:-}]%n
+            </pattern>
+            <!-- <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg %nMDC:[traceId=%X{traceId}, spanId=%X{spanId}]%n</pattern> -->
+        </encoder>  
+    </appender>
+
+    <!-- Bật MDC (Mapped Diagnostic Context) -->
+    <turboFilter class="ch.qos.logback.classic.turbo.MDCFilter">
+        <MDCKey>requestId</MDCKey>
+        <Value>*</Value>
+        <!-- <MDCValue>*</MDCValue> -->
+        <OnMatch>ACCEPT</OnMatch>
+        <OnMismatch>NEUTRAL</OnMismatch>
+    </turboFilter>
+
+    <!-- Cấu hình root logger -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </root>
+
+    <!-- Cấu hình logger cho Hibernate -->
+    <logger name="org.hibernate" level="DEBUG" additivity="false">
+        <appender-ref ref="HIBERNATE"/>
+    </logger>
+
+    <!-- Cấu hình logger cho Spring Security -->
+    <logger name="org.springframework.security" level="DEBUG" additivity="false">
+        <appender-ref ref="SECURITY"/>
+    </logger>
+
+    
+</configuration>

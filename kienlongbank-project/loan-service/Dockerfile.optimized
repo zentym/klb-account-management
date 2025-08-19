@@ -1,0 +1,31 @@
+# Optimized Multi-stage Dockerfile for Loan Service
+# Stage 1: Build common-api dependency
+FROM maven:3.8.5-openjdk-17-slim AS common-api-build
+WORKDIR /app/common-api
+COPY common-api/pom.xml .
+RUN mvn dependency:go-offline -B
+COPY common-api/src ./src
+RUN mvn clean install -DskipTests -q
+
+# Stage 2: Build loan-service
+FROM maven:3.8.5-openjdk-17-slim AS loan-service-build
+WORKDIR /app
+# Copy common-api from previous stage
+COPY --from=common-api-build /root/.m2/repository /root/.m2/repository
+
+WORKDIR /app/loan-service
+# Copy and download dependencies first (for better layer caching)
+COPY loan-service/pom.xml .
+RUN mvn dependency:go-offline -B -q
+
+# Copy source and build
+COPY loan-service/src ./src
+RUN mvn clean package -DskipTests -q
+
+# Stage 3: Runtime image
+FROM eclipse-temurin:17-jre-alpine
+WORKDIR /app
+COPY --from=loan-service-build /app/loan-service/target/loan-service-*.jar app.jar
+
+# Optimize JVM for containerized environment
+ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-XX:+UseG1GC", "-jar", "app.jar"]

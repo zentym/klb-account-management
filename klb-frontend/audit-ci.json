@@ -1,0 +1,11 @@
+{
+    "_comment": "Audit CI Configuration - Cấu hình cho npm audit trong CI pipeline",
+    "low": true,
+    "moderate": true,
+    "high": false,
+    "critical": false,
+    "report-type": "summary",
+    "advisories": [],
+    "allowlist": [],
+    "output-format": "json"
+}

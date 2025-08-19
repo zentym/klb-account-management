@@ -1,0 +1,340 @@
+{
+    "keycloak": {
+        "baseUrl": "http://localhost:8090",
+        "realm": "Kienlongbank",
+        "clientId": "klb-frontend",
+        "defaultUsers": {
+            "admin": {
+                "username": "admin",
+                "password": "admin123",
+                "roles": [
+                    "ADMIN",
+                    "USER"
+                ]
+            },
+            "user": {
+                "username": "testuser",
+                "password": "password123",
+                "roles": [
+                    "USER"
+                ]
+            }
+        }
+    },
+    "services": {
+        "main": {
+            "name": "Account Management Service",
+            "baseUrl": "http://localhost:8080",
+            "healthEndpoint": "/actuator/health",
+            "testData": {
+                "account": {
+                    "customerId": 1,
+                    "accountType": "SAVINGS",
+                    "initialBalance": 1000.0
+                },
+                "transaction": {
+                    "fromAccountId": 1,
+                    "toAccountId": 2,
+                    "amount": 100.0,
+                    "description": "Test transfer"
+                }
+            },
+            "endpoints": [
+                {
+                    "name": "Health Check",
+                    "path": "/api/health",
+                    "method": "GET",
+                    "authRequired": false,
+                    "roles": [],
+                    "description": "Service health check"
+                },
+                {
+                    "name": "Actuator Health",
+                    "path": "/actuator/health",
+                    "method": "GET",
+                    "authRequired": false,
+                    "roles": [],
+                    "description": "Spring actuator health check"
+                },
+                {
+                    "name": "Get All Accounts",
+                    "path": "/api/accounts",
+                    "method": "GET",
+                    "authRequired": true,
+                    "roles": [
+                        "ADMIN"
+                    ],
+                    "description": "Get all accounts (Admin only)"
+                },
+                {
+                    "name": "Create Account",
+                    "path": "/api/accounts",
+                    "method": "POST",
+                    "authRequired": true,
+                    "roles": [
+                        "USER",
+                        "ADMIN"
+                    ],
+                    "description": "Create new account",
+                    "requestBody": "account"
+                },
+                {
+                    "name": "Get Account",
+                    "path": "/api/accounts/1",
+                    "method": "GET",
+                    "authRequired": true,
+                    "roles": [
+                        "USER",
+                        "ADMIN"
+                    ],
+                    "description": "Get specific account"
+                },
+                {
+                    "name": "Get All Transactions",
+                    "path": "/api/transactions",
+                    "method": "GET",
+                    "authRequired": true,
+                    "roles": [
+                        "ADMIN"
+                    ],
+                    "description": "Get all transactions (Admin only)"
+                },
+                {
+                    "name": "Create Transaction",
+                    "path": "/api/transactions",
+                    "method": "POST",
+                    "authRequired": true,
+                    "roles": [
+                        "USER",
+                        "ADMIN"
+                    ],
+                    "description": "Create new transaction",
+                    "requestBody": "transaction"
+                }
+            ]
+        },
+        "customer": {
+            "name": "Customer Service",
+            "baseUrl": "http://localhost:8082",
+            "healthEndpoint": "/actuator/health",
+            "testData": {
+                "customer": {
+                    "firstName": "John",
+                    "lastName": "Doe",
+                    "email": "john.doe@example.com",
+                    "phoneNumber": "0123456789",
+                    "address": "123 Main St"
+                }
+            },
+            "endpoints": [
+                {
+                    "name": "Health Check",
+                    "path": "/actuator/health",
+                    "method": "GET",
+                    "authRequired": false,
+                    "roles": [],
+                    "description": "Service health check"
+                },
+                {
+                    "name": "Get All Customers",
+                    "path": "/api/customers",
+                    "method": "GET",
+                    "authRequired": true,
+                    "roles": [
+                        "USER",
+                        "ADMIN"
+                    ],
+                    "description": "Get all customers"
+                },
+                {
+                    "name": "Create Customer",
+                    "path": "/api/customers",
+                    "method": "POST",
+                    "authRequired": true,
+                    "roles": [
+                        "ADMIN"
+                    ],
+                    "description": "Create new customer (Admin only)",
+                    "requestBody": "customer"
+                },
+                {
+                    "name": "Get Customer",
+                    "path": "/api/customers/1",
+                    "method": "GET",
+                    "authRequired": true,
+                    "roles": [
+                        "USER",
+                        "ADMIN"
+                    ],
+                    "description": "Get specific customer"
+                },
+                {
+                    "name": "Update Customer",
+                    "path": "/api/customers/1",
+                    "method": "PUT",
+                    "authRequired": true,
+                    "roles": [
+                        "ADMIN"
+                    ],
+                    "description": "Update customer (Admin only)",
+                    "requestBody": "customer"
+                },
+                {
+                    "name": "Delete Customer",
+                    "path": "/api/customers/1",
+                    "method": "DELETE",
+                    "authRequired": true,
+                    "roles": [
+                        "ADMIN"
+                    ],
+                    "description": "Delete customer (Admin only)"
+                },
+                {
+                    "name": "Get Customer Accounts",
+                    "path": "/api/customers/1/accounts",
+                    "method": "GET",
+                    "authRequired": true,
+                    "roles": [
+                        "USER",
+                        "ADMIN"
+                    ],
+                    "description": "Get customer accounts"
+                }
+            ]
+        },
+        "loan": {
+            "name": "Loan Service",
+            "baseUrl": "http://localhost:8083",
+            "healthEndpoint": "/actuator/health",
+            "testData": {
+                "loanRequest": {
+                    "customerId": 1,
+                    "amount": 50000.0,
+                    "purpose": "Home renovation",
+                    "termMonths": 24,
+                    "interestRate": 5.5
+                }
+            },
+            "endpoints": [
+                {
+                    "name": "Health Check",
+                    "path": "/actuator/health",
+                    "method": "GET",
+                    "authRequired": false,
+                    "roles": [],
+                    "description": "Service health check"
+                },
+                {
+                    "name": "Get All Loans",
+                    "path": "/api/loans",
+                    "method": "GET",
+                    "authRequired": true,
+                    "roles": [
+                        "ADMIN"
+                    ],
+                    "description": "Get all loans (Admin only)"
+                },
+                {
+                    "name": "Apply for Loan",
+                    "path": "/api/loans/apply",
+                    "method": "POST",
+                    "authRequired": true,
+                    "roles": [
+                        "USER",
+                        "ADMIN"
+                    ],
+                    "description": "Apply for a loan",
+                    "requestBody": "loanRequest"
+                },
+                {
+                    "name": "Get My Loans",
+                    "path": "/api/loans/my-loans",
+                    "method": "GET",
+                    "authRequired": true,
+                    "roles": [
+                        "USER",
+                        "ADMIN"
+                    ],
+                    "description": "Get current user's loans"
+                },
+                {
+                    "name": "Get Loan",
+                    "path": "/api/loans/1",
+                    "method": "GET",
+                    "authRequired": true,
+                    "roles": [
+                        "USER",
+                        "ADMIN"
+                    ],
+                    "description": "Get specific loan"
+                },
+                {
+                    "name": "Approve Loan",
+                    "path": "/api/loans/1/approve",
+                    "method": "PUT",
+                    "authRequired": true,
+                    "roles": [
+                        "ADMIN"
+                    ],
+                    "description": "Approve loan (Admin only)"
+                },
+                {
+                    "name": "Reject Loan",
+                    "path": "/api/loans/1/reject",
+                    "method": "PUT",
+                    "authRequired": true,
+                    "roles": [
+                        "ADMIN"
+                    ],
+                    "description": "Reject loan (Admin only)",
+                    "requestBody": "rejectionReason"
+                }
+            ]
+        },
+        "notification": {
+            "name": "Notification Service",
+            "baseUrl": "http://localhost:8084",
+            "healthEndpoint": "/actuator/health",
+            "testData": {},
+            "endpoints": [
+                {
+                    "name": "Health Check",
+                    "path": "/actuator/health",
+                    "method": "GET",
+                    "authRequired": false,
+                    "roles": [],
+                    "description": "Service health check"
+                }
+            ]
+        }
+    },
+    "testScenarios": {
+        "smoke": {
+            "description": "Basic smoke test - health checks only",
+            "endpoints": [
+                "health"
+            ]
+        },
+        "auth": {
+            "description": "Authentication test - protected endpoints",
+            "endpoints": [
+                "protected"
+            ]
+        },
+        "crud": {
+            "description": "CRUD operations test",
+            "endpoints": [
+                "create",
+                "read",
+                "update",
+                "delete"
+            ]
+        },
+        "full": {
+            "description": "Full API test suite",
+            "endpoints": [
+                "all"
+            ]
+        }
+    }
+}

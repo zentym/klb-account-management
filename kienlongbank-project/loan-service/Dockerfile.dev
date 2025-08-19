@@ -1,0 +1,19 @@
+# Simple development Dockerfile (assumes common-api is pre-built)
+FROM maven:3.8.5-openjdk-17-slim AS build
+WORKDIR /app
+
+# Copy loan-service only
+COPY loan-service/pom.xml ./pom.xml
+RUN mvn dependency:go-offline -B -q
+
+COPY loan-service/src ./src
+RUN mvn clean package -DskipTests -q -Dspring-boot.repackage.skip=false
+
+# Runtime stage
+FROM eclipse-temurin:17-jre-alpine
+WORKDIR /app
+COPY --from=build /app/target/loan-service-*.jar app.jar
+
+# JVM optimization for containers
+ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+UseG1GC -Xms256m"
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

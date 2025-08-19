@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KLB Custom Login Demo</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .title {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+
+        .input:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        .button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-weight: bold;
+        }
+
+        .login-button {
+            background-color: #4CAF50;
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        .login-button:hover:not(:disabled) {
+            background-color: #45a049;
+        }
+
+        .login-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .logout-button {
+            background-color: #f44336;
+            color: white;
+        }
+
+        .logout-button:hover:not(:disabled) {
+            background-color: #da190b;
+        }
+
+        .error {
+            background-color: #ffebee;
+            color: #c62828;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            border: 1px solid #ffcdd2;
+        }
+
+        .success {
+            background-color: #e8f5e8;
+            color: #2e7d32;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .user-info {
+            background-color: #e3f2fd;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .demo-users {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+        }
+
+        .demo-button {
+            margin: 5px;
+            padding: 8px 12px;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .demo-button:hover {
+            background-color: #1976D2;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .token-display {
+            font-family: monospace;
+            font-size: 12px;
+            word-break: break-all;
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 4px;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+
+        .permissions {
+            margin-top: 15px;
+        }
+
+        .permission-item {
+            margin: 5px 0;
+            padding: 5px;
+            border-radius: 4px;
+        }
+
+        .has-permission {
+            background-color: #e8f5e8;
+            color: #2e7d32;
+        }
+
+        .no-permission {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Login Form -->
+        <div id="loginForm">
+            <h2 class="title">🔐 KLB Custom Login Demo</h2>
+            <p class="subtitle">Test trang đăng nhập tùy chỉnh với Keycloak API</p>
+
+            <form onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label class="label" for="phoneNumber">� Số điện thoại:</label>
+                    <input type="tel" id="phoneNumber" class="input" value="0987654321" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="label" for="password">🔒 Mật khẩu:</label>
+                    <input type="password" id="password" class="input" value="password123" required>
+                </div>
+
+                <div id="errorMessage" class="error hidden"></div>
+
+                <button type="submit" id="loginButton" class="button login-button">
+                    🚀 Đăng nhập
+                </button>
+            </form>
+
+            <div class="demo-users">
+                <h4>🧪 Tài khoản demo:</h4>
+                <button class="demo-button" onclick="fillCredentials('0987654321', 'password123')">
+                    0987654321 / password123 (USER)
+                </button>
+                <button class="demo-button" onclick="fillCredentials('0901234567', 'admin123')">
+                    0901234567 / admin123 (ADMIN - nếu có)
+                </button>
+            </div>
+        </div>
+
+        <!-- Success View -->
+        <div id="successView" class="hidden">
+            <h2 class="title">🎉 Đăng nhập thành công!</h2>
+
+            <div class="success">
+                <strong>✅ Xác thực thành công với Keycloak!</strong><br>
+                Bạn đã đăng nhập thành công bằng Custom Login UI.
+            </div>
+
+            <div class="user-info">
+                <h3>👤 Thông tin người dùng:</h3>
+                <div id="userDetails"></div>
+            </div>
+
+            <div class="user-info">
+                <h3>🔐 Token Info:</h3>
+                <div>
+                    <strong>Access Token (50 ký tự đầu):</strong><br>
+                    <div id="accessTokenPreview" class="token-display"></div>
+                </div>
+                <div style="margin-top: 10px;">
+                    <strong>Refresh Token (30 ký tự đầu):</strong><br>
+                    <div id="refreshTokenPreview" class="token-display"></div>
+                </div>
+            </div>
+
+            <div class="permissions">
+                <h3>🛡️ Quyền hạn:</h3>
+                <div id="permissionsList"></div>
+            </div>
+
+            <button onclick="handleLogout()" id="logoutButton" class="button logout-button">
+                🚪 Đăng xuất
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Custom Keycloak Service (simplified for demo)
+        class CustomKeycloakService {
+            constructor() {
+                this.baseUrl = 'http://localhost:8090';
+                this.realm = 'Kienlongbank';
+                this.clientId = 'klb-frontend';
+            }
+
+            async login(phoneNumber, password) {
+                const response = await fetch(`${this.baseUrl}/realms/${this.realm}/protocol/openid-connect/token`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        grant_type: 'password',
+                        client_id: this.clientId,
+                        username: phoneNumber, // Send phoneNumber as username to Keycloak
+                        password: password,
+                    }),
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.text();
+                    console.error('Login error:', errorData);
+
+                    if (response.status === 401) {
+                        throw new Error('Tên đăng nhập hoặc mật khẩu không đúng');
+                    } else if (response.status === 400) {
+                        throw new Error('Dữ liệu đầu vào không hợp lệ');
+                    } else {
+                        throw new Error('Không thể kết nối đến máy chủ xác thực');
+                    }
+                }
+
+                const tokenData = await response.json();
+
+                // Decode JWT token (simple base64 decode for demo)
+                const payload = this.decodeJWT(tokenData.access_token);
+
+                const userInfo = {
+                    username: payload.preferred_username || phoneNumber,
+                    email: payload.email,
+                    name: payload.name,
+                    roles: payload.realm_access?.roles || [],
+                    token: tokenData.access_token,
+                    refreshToken: tokenData.refresh_token,
+                };
+
+                // Store in localStorage
+                localStorage.setItem('klb_user_info', JSON.stringify(userInfo));
+                localStorage.setItem('klb_access_token', tokenData.access_token);
+                localStorage.setItem('klb_refresh_token', tokenData.refresh_token);
+
+                return userInfo;
+            }
+
+            decodeJWT(token) {
+                try {
+                    const parts = token.split('.');
+                    if (parts.length !== 3) return {};
+
+                    const payload = parts[1];
+                    const decoded = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+                    return JSON.parse(decoded);
+                } catch (error) {
+                    console.error('Error decoding JWT:', error);
+                    return {};
+                }
+            }
+
+            getCurrentUser() {
+                const userInfoStr = localStorage.getItem('klb_user_info');
+                if (!userInfoStr) return null;
+
+                try {
+                    return JSON.parse(userInfoStr);
+                } catch (error) {
+                    console.error('Error parsing user info:', error);
+                    return null;
+                }
+            }
+
+            async logout() {
+                // Clear localStorage
+                localStorage.removeItem('klb_user_info');
+                localStorage.removeItem('klb_access_token');
+                localStorage.removeItem('klb_refresh_token');
+            }
+
+            hasRole(role) {
+                const user = this.getCurrentUser();
+                return user ? user.roles.includes(role) : false;
+            }
+
+            isAdmin() {
+                return this.hasRole('ADMIN') || this.hasRole('admin');
+            }
+        }
+
+        // Initialize service
+        const keycloakService = new CustomKeycloakService();
+
+        // Check if user is already logged in
+        window.addEventListener('load', function () {
+            const user = keycloakService.getCurrentUser();
+            if (user) {
+                showSuccessView(user);
+            }
+        });
+
+        // Form handlers
+        function fillCredentials(phoneNumber, password) {
+            document.getElementById('phoneNumber').value = phoneNumber;
+            document.getElementById('password').value = password;
+            hideError();
+        }
+
+        async function handleLogin(event) {
+            event.preventDefault();
+
+            const phoneNumber = document.getElementById('phoneNumber').value;
+            const password = document.getElementById('password').value;
+            const loginButton = document.getElementById('loginButton');
+
+            loginButton.disabled = true;
+            loginButton.textContent = '🔄 Đang đăng nhập...';
+
+            hideError();
+
+            try {
+                const userInfo = await keycloakService.login(phoneNumber, password);
+                console.log('Login successful:', userInfo);
+                showSuccessView(userInfo);
+            } catch (error) {
+                console.error('Login failed:', error);
+                showError(error.message);
+            } finally {
+                loginButton.disabled = false;
+                loginButton.textContent = '🚀 Đăng nhập';
+            }
+        }
+
+        async function handleLogout() {
+            const logoutButton = document.getElementById('logoutButton');
+
+            logoutButton.disabled = true;
+            logoutButton.textContent = '🔄 Đang đăng xuất...';
+
+            try {
+                await keycloakService.logout();
+                console.log('Logout successful');
+                showLoginForm();
+            } catch (error) {
+                console.error('Logout failed:', error);
+            } finally {
+                logoutButton.disabled = false;
+                logoutButton.textContent = '🚪 Đăng xuất';
+            }
+        }
+
+        function showError(message) {
+            const errorElement = document.getElementById('errorMessage');
+            errorElement.textContent = '⚠️ ' + message;
+            errorElement.classList.remove('hidden');
+        }
+
+        function hideError() {
+            const errorElement = document.getElementById('errorMessage');
+            errorElement.classList.add('hidden');
+        }
+
+        function showSuccessView(userInfo) {
+            // Hide login form
+            document.getElementById('loginForm').classList.add('hidden');
+
+            // Show success view
+            document.getElementById('successView').classList.remove('hidden');
+
+            // Populate user details
+            document.getElementById('userDetails').innerHTML = `
+                <div><strong>Tên đăng nhập:</strong> ${userInfo.username}</div>
+                <div><strong>Email:</strong> ${userInfo.email || 'N/A'}</div>
+                <div><strong>Họ tên:</strong> ${userInfo.name || 'N/A'}</div>
+                <div><strong>Vai trò:</strong> ${userInfo.roles.join(', ')}</div>
+            `;
+
+            // Show token previews
+            document.getElementById('accessTokenPreview').textContent = userInfo.token.substring(0, 50) + '...';
+            document.getElementById('refreshTokenPreview').textContent = userInfo.refreshToken.substring(0, 30) + '...';
+
+            // Show permissions
+            const permissionsList = document.getElementById('permissionsList');
+            permissionsList.innerHTML = `
+                <div class="permission-item ${keycloakService.isAdmin() ? 'has-permission' : 'no-permission'}">
+                    ${keycloakService.isAdmin() ? '✅' : '❌'} Admin Access
+                </div>
+                <div class="permission-item ${keycloakService.hasRole('USER') ? 'has-permission' : 'no-permission'}">
+                    ${keycloakService.hasRole('USER') ? '✅' : '❌'} User Access
+                </div>
+            `;
+        }
+
+        function showLoginForm() {
+            // Hide success view
+            document.getElementById('successView').classList.add('hidden');
+
+            // Show login form
+            document.getElementById('loginForm').classList.remove('hidden');
+
+            // Reset form
+            document.getElementById('username').value = 'testuser';
+            document.getElementById('password').value = 'password123';
+            hideError();
+        }
+    </script>
+</body>
+
+</html>

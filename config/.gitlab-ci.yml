@@ -1,0 +1,442 @@
+# GitLab CI/CD Pipeline Configuration for KLB Account Management
+# Dự án bao gồm: Spring Boot Microservices + React Frontend + Docker
+
+# Định nghĩa các stage cho pipeline
+stages:
+  - validate
+  - test
+  - build
+  - security-scan
+  - package
+  - deploy-staging
+  - deploy-production
+
+# Biến toàn cục
+variables:
+  # Docker
+  DOCKER_REGISTRY: "registry.gitlab.com"
+  DOCKER_IMAGE_TAG: $CI_COMMIT_SHA
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: "/certs"
+  
+  # Maven
+  MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
+  MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version"
+  
+  # Node.js
+  NODE_VERSION: "18"
+  
+  # Services
+  SERVICES: "api-gateway,common-api,customer-service,loan-service,main-app,notification-service"
+
+# Cache configuration
+cache:
+  key: 
+    files:
+      - "kienlongbank-project/*/pom.xml"
+      - "klb-frontend/package-lock.json"
+  paths:
+    - .m2/repository/
+    - klb-frontend/node_modules/
+    - klb-frontend/.npm/
+
+# Template cho Maven jobs
+.maven-template: &maven-template
+  image: maven:3.9.0-openjdk-17-slim
+  before_script:
+    - cd kienlongbank-project
+    - apt-get update -qy
+    - apt-get install -y git
+
+# Template cho Node.js jobs
+.node-template: &node-template
+  image: node:18-alpine
+  before_script:
+    - cd klb-frontend
+    - npm ci --cache .npm --prefer-offline
+
+# Template cho Docker jobs
+.docker-template: &docker-template
+  image: docker:24.0.2
+  services:
+    - docker:24.0.2-dind
+  before_script:
+    - docker info
+    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+
+# =============================================================================
+# VALIDATE STAGE - Kiểm tra định dạng code và dependencies
+# =============================================================================
+
+validate:maven-projects:
+  <<: *maven-template
+  stage: validate
+  script:
+    - echo "🔍 Validating Maven projects structure..."
+    - for service in $(echo $SERVICES | tr ',' ' '); do
+        echo "Validating $service...";
+        if [ -f "$service/pom.xml" ]; then
+          cd $service;
+          mvn $MAVEN_CLI_OPTS validate;
+          cd ..;
+        else
+          echo "⚠️  pom.xml not found in $service";
+        fi;
+      done
+  rules:
+    - changes:
+        - "kienlongbank-project/**/*.xml"
+        - "kienlongbank-project/**/*.java"
+
+validate:frontend-dependencies:
+  <<: *node-template
+  stage: validate
+  script:
+    - echo "🔍 Validating frontend dependencies..."
+    - npm audit --audit-level moderate
+    - npm run build --if-present || echo "No build script found"
+  rules:
+    - changes:
+        - "klb-frontend/**/*"
+
+validate:docker-files:
+  image: hadolint/hadolint:latest-debian
+  stage: validate
+  script:
+    - echo "🔍 Linting Dockerfiles..."
+    - find kienlongbank-project -name "Dockerfile*" -exec hadolint {} \;
+  allow_failure: true
+  rules:
+    - changes:
+        - "kienlongbank-project/**/Dockerfile*"
+
+# =============================================================================
+# TEST STAGE - Unit tests và integration tests
+# =============================================================================
+
+test:backend-services:
+  <<: *maven-template
+  stage: test
+  services:
+    - postgres:15-alpine
+  variables:
+    POSTGRES_DB: test_db
+    POSTGRES_USER: test_user
+    POSTGRES_PASSWORD: test_password
+    SPRING_PROFILES_ACTIVE: test
+  script:
+    - echo "🧪 Running backend tests..."
+    - for service in $(echo $SERVICES | tr ',' ' '); do
+        if [ -f "$service/pom.xml" ]; then
+          echo "Testing $service...";
+          cd $service;
+          mvn $MAVEN_CLI_OPTS test;
+          cd ..;
+        fi;
+      done
+  artifacts:
+    reports:
+      junit:
+        - "kienlongbank-project/*/target/surefire-reports/TEST-*.xml"
+    paths:
+      - "kienlongbank-project/*/target/site/jacoco/"
+    expire_in: 1 week
+  coverage: '/Total.*?([0-9]{1,3})%/'
+  rules:
+    - changes:
+        - "kienlongbank-project/**/*.java"
+        - "kienlongbank-project/**/*.xml"
+
+test:frontend:
+  <<: *node-template
+  stage: test
+  script:
+    - echo "🧪 Running frontend tests..."
+    - npm test -- --coverage --watchAll=false
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: klb-frontend/coverage/cobertura-coverage.xml
+    paths:
+      - klb-frontend/coverage/
+    expire_in: 1 week
+  rules:
+    - changes:
+        - "klb-frontend/**/*"
+
+test:integration:
+  <<: *maven-template
+  stage: test
+  services:
+    - postgres:15-alpine
+    - redis:7-alpine
+  variables:
+    POSTGRES_DB: integration_test_db
+    POSTGRES_USER: test_user
+    POSTGRES_PASSWORD: test_password
+    SPRING_PROFILES_ACTIVE: integration-test
+  script:
+    - echo "🔗 Running integration tests..."
+    - cd customer-service
+    - mvn $MAVEN_CLI_OPTS integration-test
+    - cd ../loan-service
+    - mvn $MAVEN_CLI_OPTS integration-test
+  artifacts:
+    reports:
+      junit:
+        - "kienlongbank-project/*/target/failsafe-reports/TEST-*.xml"
+    expire_in: 1 week
+  allow_failure: true
+  rules:
+    - changes:
+        - "kienlongbank-project/**/*.java"
+
+# =============================================================================
+# BUILD STAGE - Compile và build artifacts
+# =============================================================================
+
+build:backend-services:
+  <<: *maven-template
+  stage: build
+  script:
+    - echo "🔨 Building backend services..."
+    - for service in $(echo $SERVICES | tr ',' ' '); do
+        if [ -f "$service/pom.xml" ]; then
+          echo "Building $service...";
+          cd $service;
+          mvn $MAVEN_CLI_OPTS clean compile package -DskipTests;
+          cd ..;
+        fi;
+      done
+  artifacts:
+    paths:
+      - "kienlongbank-project/*/target/*.jar"
+    expire_in: 1 hour
+  rules:
+    - changes:
+        - "kienlongbank-project/**/*.java"
+        - "kienlongbank-project/**/*.xml"
+
+build:frontend:
+  <<: *node-template
+  stage: build
+  script:
+    - echo "🔨 Building frontend application..."
+    - npm run build
+  artifacts:
+    paths:
+      - klb-frontend/build/
+    expire_in: 1 hour
+  rules:
+    - changes:
+        - "klb-frontend/**/*"
+
+# =============================================================================
+# SECURITY SCAN STAGE - Kiểm tra bảo mật
+# =============================================================================
+
+security:dependency-check:
+  <<: *maven-template
+  stage: security-scan
+  script:
+    - echo "🛡️  Running dependency vulnerability check..."
+    - apt-get install -y wget
+    - wget -q https://github.com/jeremylong/DependencyCheck/releases/download/v8.4.0/dependency-check-8.4.0-release.zip
+    - unzip -q dependency-check-8.4.0-release.zip
+    - for service in $(echo $SERVICES | tr ',' ' '); do
+        if [ -f "$service/pom.xml" ]; then
+          echo "Checking $service...";
+          ./dependency-check/bin/dependency-check.sh --project "$service" --scan "$service" --format HTML --format JSON;
+        fi;
+      done
+  artifacts:
+    reports:
+      dependency_scanning: "dependency-check-report.json"
+    paths:
+      - "dependency-check-report.*"
+    expire_in: 1 week
+  allow_failure: true
+  only:
+    - main
+    - develop
+
+security:frontend-audit:
+  <<: *node-template
+  stage: security-scan
+  script:
+    - echo "🛡️  Running frontend security audit..."
+    - npm audit --audit-level high
+    - npx audit-ci --config audit-ci.json || echo "Security issues found but continuing..."
+  allow_failure: true
+  only:
+    - main
+    - develop
+
+# =============================================================================
+# PACKAGE STAGE - Tạo Docker images
+# =============================================================================
+
+package:docker-images:
+  <<: *docker-template
+  stage: package
+  dependencies:
+    - build:backend-services
+    - build:frontend
+  script:
+    - echo "📦 Building Docker images..."
+    - cd kienlongbank-project
+    
+    # Build các service images
+    - for service in $(echo $SERVICES | tr ',' ' '); do
+        if [ -f "$service/Dockerfile" ]; then
+          echo "Building Docker image for $service...";
+          docker build -t $CI_REGISTRY_IMAGE/$service:$DOCKER_IMAGE_TAG $service/;
+          docker push $CI_REGISTRY_IMAGE/$service:$DOCKER_IMAGE_TAG;
+          
+          # Tag latest cho main branch
+          if [ "$CI_COMMIT_REF_NAME" = "main" ]; then
+            docker tag $CI_REGISTRY_IMAGE/$service:$DOCKER_IMAGE_TAG $CI_REGISTRY_IMAGE/$service:latest;
+            docker push $CI_REGISTRY_IMAGE/$service:latest;
+          fi;
+        fi;
+      done
+    
+    # Build frontend image nếu có Dockerfile
+    - cd ../klb-frontend
+    - if [ -f "Dockerfile" ]; then
+        echo "Building frontend Docker image...";
+        docker build -t $CI_REGISTRY_IMAGE/frontend:$DOCKER_IMAGE_TAG .;
+        docker push $CI_REGISTRY_IMAGE/frontend:$DOCKER_IMAGE_TAG;
+        if [ "$CI_COMMIT_REF_NAME" = "main" ]; then
+          docker tag $CI_REGISTRY_IMAGE/frontend:$DOCKER_IMAGE_TAG $CI_REGISTRY_IMAGE/frontend:latest;
+          docker push $CI_REGISTRY_IMAGE/frontend:latest;
+        fi;
+      fi
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_BRANCH == "develop"
+    - if: $CI_COMMIT_TAG
+
+# =============================================================================
+# DEPLOY STAGING STAGE - Deploy lên môi trường staging
+# =============================================================================
+
+deploy:staging:
+  image: alpine:latest
+  stage: deploy-staging
+  environment:
+    name: staging
+    url: https://klb-staging.example.com
+  before_script:
+    - apk add --no-cache curl docker-compose
+    - echo "$STAGING_SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - ssh-keyscan -H $STAGING_SERVER >> ~/.ssh/known_hosts
+  script:
+    - echo "🚀 Deploying to staging environment..."
+    - |
+      ssh $STAGING_USER@$STAGING_SERVER << EOF
+        cd /opt/klb-staging
+        echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin $CI_REGISTRY
+        
+        # Update docker-compose với images mới
+        export IMAGE_TAG=$DOCKER_IMAGE_TAG
+        docker-compose pull
+        docker-compose up -d --remove-orphans
+        
+        # Health check
+        sleep 30
+        curl -f http://localhost:8080/actuator/health || exit 1
+      EOF
+  rules:
+    - if: $CI_COMMIT_BRANCH == "develop"
+  when: manual
+
+# =============================================================================
+# DEPLOY PRODUCTION STAGE - Deploy lên môi trường production
+# =============================================================================
+
+deploy:production:
+  image: alpine:latest
+  stage: deploy-production
+  environment:
+    name: production
+    url: https://klb.kienlongbank.com
+  before_script:
+    - apk add --no-cache curl docker-compose
+    - echo "$PRODUCTION_SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - ssh-keyscan -H $PRODUCTION_SERVER >> ~/.ssh/known_hosts
+  script:
+    - echo "🚀 Deploying to production environment..."
+    - |
+      ssh $PRODUCTION_USER@$PRODUCTION_SERVER << EOF
+        cd /opt/klb-production
+        echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin $CI_REGISTRY
+        
+        # Backup database trước khi deploy
+        docker-compose exec -T postgres-db pg_dump -U kienlong account_management > backup_$(date +%Y%m%d_%H%M%S).sql
+        
+        # Rolling update
+        export IMAGE_TAG=$DOCKER_IMAGE_TAG
+        docker-compose pull
+        
+        # Update từng service một cách tuần tự
+        for service in api-gateway customer-service loan-service notification-service main-app; do
+          echo "Updating \$service..."
+          docker-compose up -d \$service
+          sleep 15
+          curl -f http://localhost:8080/actuator/health || exit 1
+        done
+        
+        # Cleanup old images
+        docker image prune -af --filter "until=24h"
+      EOF
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+  when: manual
+  allow_failure: false
+
+# =============================================================================
+# ADDITIONAL JOBS - Các job bổ sung
+# =============================================================================
+
+# Cleanup job - Dọn dẹp artifacts cũ
+cleanup:artifacts:
+  image: alpine:latest
+  stage: .post
+  script:
+    - echo "🧹 Cleaning up old artifacts..."
+    - echo "Cleanup completed"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+  when: always
+
+# Performance testing job
+performance:test:
+  image: loadimpact/k6:latest
+  stage: deploy-staging
+  script:
+    - echo "⚡ Running performance tests..."
+    - k6 run --vus 10 --duration 30s /tests/performance-test.js
+  artifacts:
+    reports:
+      performance: performance-report.json
+  rules:
+    - if: $CI_COMMIT_BRANCH == "develop"
+  allow_failure: true
+  when: manual
+
+# Database migration job
+database:migrate:
+  <<: *maven-template
+  stage: deploy-staging
+  script:
+    - echo "🗃️  Running database migrations..."
+    - cd main-app
+    - mvn liquibase:update -Dliquibase.url=$DATABASE_URL -Dliquibase.username=$DATABASE_USER -Dliquibase.password=$DATABASE_PASSWORD
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_BRANCH == "develop"
+  when: manual

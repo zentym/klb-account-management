@@ -1,0 +1,17 @@
+{
+    "request": {
+        "method": "POST",
+        "url": "/core/transactions"
+    },
+    "response": {
+        "status": 200,
+        "jsonBody": {
+            "transactionId": "CORE_TXN_12345",
+            "status": "APPROVED",
+            "message": "Core banking system approved the transaction."
+        },
+        "headers": {
+            "Content-Type": "application/json"
+        }
+    }
+}

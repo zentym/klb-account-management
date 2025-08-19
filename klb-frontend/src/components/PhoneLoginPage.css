@@ -1,0 +1,628 @@
+/* PhoneLoginPage.css */
+.phone-login-container {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);
+    padding: 20px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+.phone-login-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    padding: 40px;
+    width: 100%;
+    max-width: 420px;
+    position: relative;
+    animation: slideUp 0.5s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Header Styles */
+.login-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.logo-section {
+    margin-bottom: 20px;
+}
+
+.logo-placeholder {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 18px;
+    margin: 0 auto 10px;
+}
+
+.login-header h1 {
+    color: #333;
+    font-size: 24px;
+    font-weight: 600;
+    margin: 0 0 10px 0;
+}
+
+.login-header h2 {
+    color: #555;
+    font-size: 20px;
+    font-weight: 500;
+    margin: 0 0 8px 0;
+}
+
+.login-subtitle {
+    color: #666;
+    font-size: 14px;
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* Messages */
+.error-message,
+.success-message {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    animation: slideIn 0.3s ease-out;
+}
+
+.error-message {
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+.success-message {
+    background: #f0fdf4;
+    color: #16a34a;
+    border: 1px solid #bbf7d0;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Form Styles */
+.login-form,
+.verify-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 6px;
+}
+
+.required {
+    color: #dc2626;
+}
+
+.form-input,
+.otp-input {
+    padding: 12px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    outline: none;
+    background: white;
+}
+
+.form-input:focus,
+.otp-input:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.form-input:disabled,
+.otp-input:disabled {
+    background: #f9fafb;
+    color: #6b7280;
+    cursor: not-allowed;
+}
+
+.otp-input {
+    text-align: center;
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: 4px;
+    max-width: 200px;
+    margin: 0 auto;
+}
+
+/* Password Input */
+.password-input-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-input-container .form-input {
+    padding-right: 48px;
+    width: 100%;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+
+.password-toggle:hover:not(:disabled) {
+    background: #f3f4f6;
+}
+
+.password-toggle:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+/* Form Options */
+.form-options {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 10px 0;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #555;
+}
+
+.checkbox-input {
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #d1d5db;
+    border-radius: 3px;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.checkbox-input:checked {
+    background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);
+    border-color: #4f46e5;
+}
+
+.checkbox-input:checked::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+}
+
+.forgot-password-link {
+    background: none;
+    border: none;
+    color: #4f46e5;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    padding: 4px 0;
+}
+
+.forgot-password-link:hover:not(:disabled) {
+    text-decoration: underline;
+    color: #3730a3;
+}
+
+.forgot-password-link:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+/* Buttons */
+.login-button,
+.verify-button {
+    background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);
+    color: white;
+    border: none;
+    padding: 14px 24px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 10px;
+}
+
+.login-button:hover:not(:disabled),
+.verify-button:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3);
+}
+
+.login-button:disabled,
+.verify-button:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.back-button {
+    background: none;
+    color: #6b7280;
+    border: 2px solid #e5e7eb;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.back-button:hover:not(:disabled) {
+    border-color: #9ca3af;
+    color: #4b5563;
+}
+
+.back-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.resend-button {
+    background: none;
+    border: none;
+    color: #4f46e5;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 4px 0;
+}
+
+.resend-button:hover:not(:disabled) {
+    color: #3730a3;
+}
+
+.resend-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+/* OTP Specific */
+.otp-info {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.phone-display {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.otp-group {
+    align-items: center;
+}
+
+.timer-display {
+    text-align: center;
+    color: #6b7280;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.otp-actions {
+    text-align: center;
+    margin: 15px 0;
+}
+
+.verify-buttons {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.verify-buttons .back-button,
+.verify-buttons .verify-button {
+    flex: 1;
+}
+
+/* Footer */
+.login-footer {
+    text-align: center;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #f3f4f6;
+}
+
+.login-footer p {
+    color: #666;
+    font-size: 14px;
+    margin: 0;
+}
+
+.switch-button {
+    background: none;
+    border: none;
+    color: #4f46e5;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: underline;
+    font-size: 14px;
+}
+
+.switch-button:hover:not(:disabled) {
+    color: #3730a3;
+}
+
+.switch-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+/* Quick Login Section */
+.quick-login-section {
+    margin-top: 25px;
+}
+
+.divider {
+    text-align: center;
+    position: relative;
+    margin: 20px 0;
+}
+
+.divider::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: #e5e7eb;
+}
+
+.divider span {
+    background: white;
+    color: #9ca3af;
+    font-size: 12px;
+    padding: 0 15px;
+    position: relative;
+}
+
+.quick-login-buttons {
+    display: flex;
+    gap: 12px;
+}
+
+.quick-login-btn {
+    flex: 1;
+    background: #f8fafc;
+    border: 2px solid #e2e8f0;
+    color: #4a5568;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.quick-login-btn:hover:not(:disabled) {
+    background: #f1f5f9;
+    border-color: #cbd5e0;
+    transform: translateY(-1px);
+}
+
+.quick-login-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.biometric-btn:hover:not(:disabled) {
+    background: #fef7ff;
+    border-color: #d8b4fe;
+    color: #7c3aed;
+}
+
+.face-id-btn:hover:not(:disabled) {
+    background: #f0f9ff;
+    border-color: #93c5fd;
+    color: #2563eb;
+}
+
+/* Loading Spinner */
+.loading-spinner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+    .phone-login-container {
+        padding: 10px;
+    }
+
+    .phone-login-card {
+        padding: 24px;
+    }
+
+    .login-header h1 {
+        font-size: 20px;
+    }
+
+    .login-header h2 {
+        font-size: 18px;
+    }
+
+    .form-input,
+    .otp-input {
+        font-size: 16px;
+        /* Prevent zoom on iOS */
+    }
+
+    .verify-buttons {
+        flex-direction: column;
+    }
+
+    .form-options {
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+    }
+
+    .quick-login-buttons {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 400px) {
+    .phone-login-card {
+        padding: 20px;
+    }
+
+    .logo-placeholder {
+        width: 50px;
+        height: 50px;
+        font-size: 16px;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .phone-login-container {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    }
+
+    .phone-login-card {
+        background: #1f2937;
+        color: #f9fafb;
+        border: 1px solid #374151;
+    }
+
+    .login-header h1,
+    .login-header h2 {
+        color: #f9fafb;
+    }
+
+    .login-subtitle {
+        color: #d1d5db;
+    }
+
+    .form-input,
+    .otp-input {
+        background: #374151;
+        border-color: #4b5563;
+        color: #f9fafb;
+    }
+
+    .form-input:focus,
+    .otp-input:focus {
+        border-color: #60a5fa;
+        background: #1f2937;
+    }
+
+    .quick-login-btn {
+        background: #374151;
+        border-color: #4b5563;
+        color: #d1d5db;
+    }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Focus styles for accessibility */
+.form-input:focus,
+.otp-input:focus,
+.login-button:focus,
+.verify-button:focus,
+.back-button:focus,
+.resend-button:focus,
+.switch-button:focus,
+.checkbox-input:focus,
+.quick-login-btn:focus {
+    outline: 2px solid #4f46e5;
+    outline-offset: 2px;
+}
+
+/* Print styles */
+@media print {
+    .phone-login-container {
+        background: white;
+    }
+
+    .phone-login-card {
+        box-shadow: none;
+        border: 1px solid #ddd;
+    }
+
+    .quick-login-section {
+        display: none;
+    }
+}

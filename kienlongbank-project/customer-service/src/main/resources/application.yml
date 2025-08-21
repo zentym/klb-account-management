@@ -36,8 +36,9 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://keycloak:8080/realms/Kienlongbank
-          jwk-set-uri: http://keycloak:8080/realms/Kienlongbank/protocol/openid-connect/certs
+          # Use KEYCLOAK_HOST env to switch between Docker and local development
+          issuer-uri: http://${KEYCLOAK_HOST:localhost}:8080/realms/Kienlongbank
+          jwk-set-uri: http://${KEYCLOAK_HOST:localhost}:8080/realms/Kienlongbank/protocol/openid-connect/certs
     method:
       pre-post-enabled: true
 
@@ -123,3 +124,4 @@ dubbo:
   protocol:
     name: dubbo
     port: 20881
+

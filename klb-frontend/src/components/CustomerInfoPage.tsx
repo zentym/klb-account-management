@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useCustomAuth from '../hooks/useCustomAuth';
 import api from '../config/api';
+import customKeycloakService from '../services/customKeycloakService';
 
 interface CustomerInfo {
     id?: number;
@@ -56,11 +57,12 @@ const CustomerInfoPage: React.FC = () => {
             setError('');
 
             // Gọi trực tiếp Customer Service (port 8082)
+            const token = customKeycloakService.getToken();
             const response = await fetch('http://localhost:8082/api/customers/my-info', {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
-                    // TODO: Add Authorization header with JWT token
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
                 }
             });
 
@@ -116,11 +118,12 @@ const CustomerInfoPage: React.FC = () => {
             setSuccess('');
 
             // Gọi trực tiếp Customer Service để cập nhật thông tin
+            const token = customKeycloakService.getToken();
             const response = await fetch('http://localhost:8082/api/customers/my-info', {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
-                    // TODO: Add Authorization header with JWT token
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
                 },
                 body: JSON.stringify(editForm)
             });

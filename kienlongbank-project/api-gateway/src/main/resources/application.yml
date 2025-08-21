@@ -31,9 +31,10 @@ spring:
       resourceserver:
         jwt:
           # issuer-uri: http://localhost:8090/realms/Kienlongbank
-          issuer-uri: http://keycloak:8080/realms/Kienlongbank
+          # Use environment variable KEYCLOAK_HOST to allow running outside Docker
+          issuer-uri: http://${KEYCLOAK_HOST:localhost}:8080/realms/Kienlongbank
           # Alternative configuration using JWKS URI directly (more reliable)
-          # jwk-set-uri: http://klb-keycloak:8080/realms/Kienlongbank/protocol/openid-connect/certs
+          jwk-set-uri: http://${KEYCLOAK_HOST:localhost}:8080/realms/Kienlongbank/protocol/openid-connect/certs
 
 server:
   port: 8080
@@ -55,3 +56,4 @@ logging:
     # Giữ lại các log security để gỡ lỗi
     org.springframework.security: DEBUG
     org.springframework.security.oauth2.server.resource: DEBUG
+
